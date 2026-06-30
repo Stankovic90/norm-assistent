@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Norm-Assistent">
+<meta name="theme-color" content="#1d4ed8">
+<title>NORM-ASSISTENT</title>
+<!-- Gemini Edition -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1d4ed8;--blue-light:#eff6ff;--blue-mid:#bfdbfe;--blue-text:#1e40af;
+  --surface:#fff;--surface-2:#f8fafc;--surface-3:#f1f5f9;
+  --border:#e2e8f0;--border-strong:#cbd5e1;
+  --text:#0f172a;--text-2:#475569;--text-3:#94a3b8;
+  --green:#15803d;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --amber:#b45309;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fecaca;
+  --radius:12px;--r-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --surface:#1e293b;--surface-2:#0f172a;--surface-3:#334155;
+    --border:#334155;--border-strong:#475569;
+    --text:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
+    --blue-light:#1e3a5f;--blue-mid:#1e40af;--blue-text:#93c5fd;
+    --green-bg:#14532d;--green-border:#166534;
+    --amber-bg:#451a03;--amber-border:#78350f;
+    --red-bg:#450a0a;--red-border:#7f1d1d;
+  }
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--surface-2);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100%;max-width:540px;margin:0 auto;background:var(--surface);position:relative}
+
+/* Header */
+.hdr{background:var(--blue);color:#fff;padding:12px 16px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top))}
+.hdr-icon{width:34px;height:34px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-title{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.hdr-sub{font-size:11px;opacity:0.8;margin-top:1px}
+.hdr-status{margin-left:auto;font-size:11px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+
+/* Tab bar */
+.tabs{display:flex;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;border:none;background:none;color:var(--text-3);font-size:10px;font-weight:500;gap:4px;transition:color 0.15s;min-height:56px}
+.tab.active{color:var(--blue)}
+.tab svg{width:22px;height:22px;stroke-width:1.8}
+
+/* Screens */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;-webkit-overflow-scrolling:touch}
+.screen.active{display:flex}
+
+/* Bibliothek */
+.upload-btn{margin:16px;border:2px dashed var(--border-strong);border-radius:var(--radius);padding:24px 16px;text-align:center;cursor:pointer;background:var(--surface-2);transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:8px}
+.upload-btn:active{background:var(--blue-light);border-color:var(--blue)}
+.upload-btn svg{width:36px;height:36px;stroke:var(--text-3);stroke-width:1.5}
+.upload-btn p{font-size:14px;color:var(--text-2);font-weight:500}
+.upload-btn small{font-size:12px;color:var(--text-3)}
+.sec-title{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;padding:0 16px 8px}
+.norm-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;transition:background 0.1s}
+.norm-card:active{background:var(--surface-2)}
+.norm-card.disabled{opacity:0.5;pointer-events:none}
+.nc-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.nc-icon.ok{background:var(--green-bg)}
+.nc-icon.proc{background:var(--amber-bg)}
+.nc-icon.err{background:var(--red-bg)}
+.nc-body{flex:1;min-width:0}
+.nc-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.nc-meta{font-size:12px;color:var(--text-3);margin-top:2px}
+.nc-toggle{width:44px;height:26px;border-radius:13px;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.nc-toggle.on{background:var(--blue)}
+.nc-toggle.off{background:var(--border-strong)}
+.nc-toggle::after{content:'';position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.nc-toggle.on::after{left:21px}
+.nc-toggle.off::after{left:3px}
+.prog-bar{height:3px;background:var(--blue-mid);border-radius:2px;margin:0 16px 4px;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width 0.3s}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;color:var(--text-3);text-align:center}
+.empty-state svg{width:48px;height:48px;stroke:var(--border-strong);stroke-width:1.2}
+.empty-state p{font-size:14px;line-height:1.6}
+
+/* Chat */
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.msg-user{align-self:flex-end;max-width:82%;background:var(--blue);color:#fff;border-radius:18px 18px 4px 18px;padding:11px 15px;font-size:14px;line-height:1.5}
+.msg-ai{align-self:flex-start;max-width:92%}
+.msg-ai-bubble{background:var(--surface-2);border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:12px 15px;font-size:14px;line-height:1.6;color:var(--text)}
+.msg-sources{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.src-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--blue-text);background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:6px;padding:3px 8px;cursor:pointer}
+.typing-dot{display:flex;gap:4px;align-items:center;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px 18px 18px 18px;width:fit-content}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text-3);animation:pulse 1.2s infinite}
+.dot:nth-child(2){animation-delay:.4s}.dot:nth-child(3){animation-delay:.8s}
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.chat-input-wrap{border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;background:var(--surface);padding-bottom:max(10px,env(safe-area-inset-bottom));flex-shrink:0}
+.chat-input-wrap textarea{flex:1;border:1px solid var(--border-strong);border-radius:22px;padding:10px 14px;font-size:15px;font-family:inherit;resize:none;outline:none;background:var(--surface-2);color:var(--text);line-height:1.4;min-height:42px;max-height:110px}
+.chat-input-wrap textarea:focus{border-color:var(--blue)}
+.send-btn{width:42px;height:42px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s}
+.send-btn:active{opacity:0.7}
+.send-btn:disabled{background:var(--border-strong);cursor:default}
+.send-btn svg{width:20px;height:20px;stroke:#fff;stroke-width:2.2}
+.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
+.chat-empty svg{width:44px;height:44px;stroke:var(--border-strong);stroke-width:1.3}
+.chat-empty h3{font-size:16px;font-weight:600;color:var(--text-2)}
+.chat-empty p{font-size:13px;color:var(--text-3);text-align:center;line-height:1.6;max-width:280px}
+.suggestion-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}
+.suggestion{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--text-2);line-height:1.4;font-family:inherit}
+.suggestion:active{background:var(--blue-light);border-color:var(--blue-mid)}
+.suggestion b{display:block;font-size:10px;color:var(--text-3);font-weight:500;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.3px}
+
+/* Einstellungen */
+.settings-wrap{padding:16px;display:flex;flex-direction:column;gap:16px}
+.settings-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.settings-card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.settings-card h3 svg{width:18px;height:18px;stroke:var(--blue);stroke-width:2}
+.field-label{font-size:12px;font-weight:500;color:var(--text-2);margin-bottom:6px}
+.field-input{width:100%;border:1px solid var(--border-strong);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;-webkit-appearance:none}
+.field-input:focus{border-color:var(--blue)}
+.field-hint{font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5}
+.field-hint a{color:var(--blue);text-decoration:none}
+.btn-save{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;transition:opacity 0.15s}
+.btn-save:active{opacity:0.8}
+.btn-danger{width:100%;background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);border-radius:10px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity 0.15s}
+.btn-danger:active{opacity:0.7}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row span:first-child{color:var(--text-2)}
+.info-row span:last-child{color:var(--text);font-weight:500}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.badge.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:999;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+
+/* Detail modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;padding-bottom:env(safe-area-inset-bottom)}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:0 0 24px;max-height:80vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:12px auto 16px}
+.modal-title{font-size:16px;font-weight:600;padding:0 16px 12px;color:var(--text)}
+.modal-body{padding:0 16px;font-size:13px;color:var(--text-2);line-height:1.7}
+.modal-source{background:var(--surface-2);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--text);line-height:1.6}
+.modal-close{display:block;margin:16px 16px 0;padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-size:14px;color:var(--text-2);font-family:inherit}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-icon">⚡</div>
+    <div>
+      <div class="hdr-title">NORM-ASSISTENT</div>
+      <div class="hdr-sub">DGUV Prüftechniker</div>
+    </div>
+    <div class="hdr-status" id="hdrStatus">Starte...</div>
+  </div>
+
+  <!-- Bibliothek Screen -->
+  <div class="screen active" id="screen-bib">
+    <div class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 9l5-5 5 5M12 4v12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>Norm-PDF hinzufügen</p>
+      <small>DIN VDE · DGUV Vorschriften · BGV</small>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" multiple style="display:none">
+    <div id="progWrap" style="display:none">
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div style="font-size:11px;color:var(--text-3);padding:0 16px 8px" id="progText"></div>
+    </div>
+    <div class="sec-title" id="normSecTitle" style="display:none">GELADENE NORMEN</div>
+    <div id="normList"></div>
+    <div class="empty-state" id="emptyBib">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>Lade deine DIN VDE Normen hoch.<br>Die Texte werden dauerhaft gespeichert.</p>
+    </div>
+  </div>
+
+  <!-- Chat Screen -->
+  <div class="screen" id="screen-chat">
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="chat-empty" id="chatEmpty">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Frage stellen</h3>
+        <p>Frag mich zu deinen hochgeladenen Normen. Ich zeige dir wo die Antwort steht.</p>
+        <div class="suggestion-grid">
+          <button class="suggestion" onclick="useQ('Mindestquerschnitt Schutzleiter?')"><b>Beispiel</b>Mindestquerschnitt Schutzleiter?</button>
+          <button class="suggestion" onclick="useQ('FI-Schalter Auslösestrom VDE?')"><b>Beispiel</b>FI-Schalter Auslösestrom VDE?</button>
+          <button class="suggestion" onclick="useQ('Isolationswiderstand Grenzwerte?')"><b>Beispiel</b>Isolationswiderstand Grenzwerte?</button>
+          <button class="suggestion" onclick="useQ('Wiederholungsprüfung Umfang?')"><b>Beispiel</b>Wiederholungsprüfung Umfang?</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <textarea id="chatInput" placeholder="Frage zur Norm..." rows="1" oninput="resizeTA(this)" onkeydown="taKey(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()" disabled>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Einstellungen Screen -->
+  <div class="screen" id="screen-set">
+    <div class="settings-wrap">
+      <div class="settings-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Anthropic API-Schlüssel
+        </h3>
+        <div class="field-label">API Key</div>
+        <input type="password" class="field-input" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+        <div class="field-hint">Kostenlos anmelden: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>100% kostenlos · bis zu 1500 Anfragen/Tag · kein Kreditkarte nötig. Der Schlüssel bleibt nur auf deinem Gerät.</div>
+        <button class="btn-save" onclick="saveApiKey()" style="margin-top:12px">Speichern</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 2v7h7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Normbibliothek
+        </h3>
+        <div class="info-row"><span>Geladene Normen</span><span id="statNorms">0</span></div>
+        <div class="info-row"><span>Indizierte Abschnitte</span><span id="statChunks">0</span></div>
+        <div class="info-row"><span>API-Schlüssel</span><span id="statKey">—</span></div>
+        <div class="info-row"><span>Speicher</span><span id="statStorage">—</span></div>
+        <button class="btn-danger" onclick="clearAllData()" style="margin-top:12px">Alle Daten löschen</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          So funktioniert die App
+        </h3>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.7">
+          <b style="color:var(--text)">1. PDF hochladen</b> — Lade deine DIN VDE Normen einmalig hoch. Der Text wird extrahiert und dauerhaft auf deinem Gerät gespeichert.<br><br>
+          <b style="color:var(--text)">2. Frage stellen</b> — Die App sucht zuerst selbst die relevantesten Abschnitte. Dann schickt sie nur diese Auszüge an Google Gemini.<br><br>
+          <b style="color:var(--text)">3. Antwort mit Quelle</b> — Du bekommst eine Antwort mit genauer Angabe: welche Norm, welche Seite.<br><br>
+          <b style="color:var(--text)">Kostenlos & sicher</b> — Google Gemini Flash ist 100% kostenlos bis 1500 Anfragen/Tag. PDFs bleiben auf deinem Gerät.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tabs">
+    <button class="tab active" id="tab-bib" onclick="switchTab('bib')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Normen
+    </button>
+    <button class="tab" id="tab-chat" onclick="switchTab('chat')">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Fragen
+    </button>
+    <button class="tab" id="tab-set" onclick="switchTab('set')">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Einstellungen
+    </button>
+  </div>
+</div>
+
+<!-- Source Detail Modal -->
+<div class="modal-overlay" id="srcModal" onclick="closeSrcModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="srcModalTitle"></div>
+    <div class="modal-body" id="srcModalBody"></div>
+    <button class="modal-close" onclick="document.getElementById('srcModal').classList.remove('show')">Schließen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── IndexedDB ──────────────────────────────────────────────
+const DB_NAME='normassistent',DB_VER=1;
+let db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,DB_VER);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('norms'))d.createObjectStore('norms',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'});
+    };
+    r.onsuccess=e=>{db=e.target.result;res(db)};
+    r.onerror=()=>rej(r.error);
+  });
+}
+function dbGet(store,key){return new Promise((res,rej)=>{const t=db.transaction(store,'readonly').objectStore(store).get(key);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})}
+function dbGetAll(store){return new Promise((res,rej)=>{const t=db.transaction(store,'readonly').objectStore(store).getAll();t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})}
+function dbPut(store,val){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).put(val);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
+function dbDelete(store,key){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).delete(key);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
+function dbClear(store){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).clear();t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
+
+// ── State ──────────────────────────────────────────────────
+let norms=[];
+let apiKey='';
+let activeTab='bib';
+let isProcessing=false;
+
+// ── Init ───────────────────────────────────────────────────
+// API key: always localStorage (works everywhere, even file://)
+// Norm chunks: IndexedDB (large data), with localStorage fallback
+let dbAvailable=false;
+
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function lsRemove(k){try{localStorage.removeItem(k)}catch(e){}}
+
+(async()=>{
+  // Load API key from localStorage first (always works)
+  const storedKey=lsGet('norm_apikey');
+  if(storedKey){apiKey=storedKey;document.getElementById('apiKeyInput').value=storedKey;}
+
+  // Try IndexedDB for norms
+  try{
+    await openDB();
+    dbAvailable=true;
+    norms=await dbGetAll('norms');
+  }catch(e){
+    // IndexedDB blocked (file:// on iOS) — fall back to localStorage chunks
+    dbAvailable=false;
+    try{
+      const raw=lsGet('norm_norms');
+      if(raw)norms=JSON.parse(raw);
+    }catch(e2){}
+  }
+
+  if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  renderNorms();
+  updateSendBtn();
+  updateStats();
+  setStatus(norms.length?`${norms.length} Norm(en) geladen`:'Bereit');
+})();
+
+async function saveNorm(norm){
+  if(dbAvailable){
+    await dbPut('norms',norm);
+  } else {
+    // localStorage fallback (5MB limit — works for a few norms)
+    lsSet('norm_norms',JSON.stringify(norms));
+  }
+}
+async function removeNorm(id){
+  if(dbAvailable){
+    await dbDelete('norms',id);
+  } else {
+    lsSet('norm_norms',JSON.stringify(norms));
+  }
+}
+
+// ── Tab navigation ─────────────────────────────────────────
+function switchTab(t){
+  activeTab=t;
+  ['bib','chat','set'].forEach(x=>{
+    document.getElementById('screen-'+x).classList.toggle('active',x===t);
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='set')updateStats();
+}
+
+// ── Upload & PDF processing ────────────────────────────────
+document.getElementById('fileInput').addEventListener('change',async e=>{
+  if(isProcessing)return;
+  const files=[...e.target.files].filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  e.target.value='';
+  if(!files.length)return;
+  isProcessing=true;
+  const pw=document.getElementById('progWrap');
+  const pf=document.getElementById('progFill');
+  const pt=document.getElementById('progText');
+  pw.style.display='block';
+  for(let fi=0;fi<files.length;fi++){
+    const f=files[fi];
+    const id='n'+Date.now()+Math.random().toString(36).slice(2,7);
+    const name=f.name.replace(/\.pdf$/i,'');
+    pt.textContent=`(${fi+1}/${files.length}) ${name}`;
+    pf.style.width='5%';
+    try{
+      const buf=await f.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      const total=pdf.numPages;
+      const chunks=[];
+      for(let p=1;p<=total;p++){
+        pf.style.width=Math.round((p/total)*90+5)+'%';
+        pt.textContent=`${name}: Seite ${p}/${total}`;
+        const page=await pdf.getPage(p);
+        const tc=await page.getTextContent();
+        const raw=tc.items.map(i=>i.str).join(' ').replace(/\s+/g,' ').trim();
+        if(raw.length<40)continue;
+        const words=raw.split(/\s+/);
+        const SZ=130,OV=30;
+        for(let i=0;i<words.length;i+=SZ-OV){
+          const w=words.slice(i,i+SZ);
+          if(w.length>20)chunks.push({text:w.join(' '),page:p});
+        }
+      }
+      const norm={id,name,chunks,addedAt:new Date().toISOString()};
+      norms.push(norm);
+      await saveNorm(norm);
+      pf.style.width='100%';
+      toast(`✓ ${name} geladen (${chunks.length} Abschnitte)`);
+    }catch(err){
+      toast(`Fehler: ${f.name}`);
+    }
+  }
+  pw.style.display='none';
+  isProcessing=false;
+  renderNorms();
+  updateSendBtn();
+  updateStats();
+  setStatus(`${norms.length} Norm(en) in Bibliothek`);
+});
+
+// ── Render norms ───────────────────────────────────────────
+function renderNorms(){
+  const el=document.getElementById('normList');
+  const em=document.getElementById('emptyBib');
+  const sec=document.getElementById('normSecTitle');
+  if(!norms.length){em.style.display='flex';el.innerHTML='';sec.style.display='none';return;}
+  em.style.display='none';sec.style.display='block';
+  el.innerHTML=norms.map(n=>`
+    <div class="norm-card">
+      <div class="nc-icon ok">📄</div>
+      <div class="nc-body">
+        <div class="nc-name" title="${esc(n.name)}">${esc(n.name)}</div>
+        <div class="nc-meta">${n.chunks.length} Abschnitte · ${new Date(n.addedAt).toLocaleDateString('de-DE')}</div>
+      </div>
+      <button class="nc-toggle on" id="tog_${n.id}" onclick="toggleNorm('${n.id}')" aria-label="Aktivieren/Deaktivieren"></button>
+      <button style="background:none;border:none;padding:8px;cursor:pointer;color:var(--text-3)" onclick="deleteNorm('${n.id}')" aria-label="Löschen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+function toggleNorm(id){
+  const btn=document.getElementById('tog_'+id);
+  btn.classList.toggle('on');btn.classList.toggle('off');
+}
+
+async function deleteNorm(id){
+  if(!confirm('Norm aus der Bibliothek entfernen?'))return;
+  norms=norms.filter(n=>n.id!==id);
+  await removeNorm(id);
+  renderNorms();updateSendBtn();updateStats();
+  setStatus(`${norms.length} Norm(en) in Bibliothek`);
+}
+
+// ── Search ─────────────────────────────────────────────────
+const DE_STOP=new Set(['und','die','der','das','von','für','bei','mit','aus','nach','ist','sind','wird','werden','an','am','im','in','zu','auf','oder','auch','ein','eine','einer','einem','einen','nicht','so','wie','aber','wenn','dann','dass','wir','sie','es','er','ich','man','dem','den','des']);
+
+function search(query,topK=8){
+  const active=norms.filter(n=>{
+    const btn=document.getElementById('tog_'+n.id);
+    return btn?btn.classList.contains('on'):true;
+  });
+  const pool=active.length?active:norms;
+  const terms=query.toLowerCase().split(/[\s,;.?!]+/).filter(t=>t.length>2&&!DE_STOP.has(t));
+  if(!terms.length)return[];
+  const scored=pool.flatMap(n=>n.chunks.map(c=>({...c,normName:n.name}))).map(c=>{
+    const t=c.text.toLowerCase();
+    let s=0;
+    terms.forEach(term=>{
+      const re=new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g');
+      s+=(t.match(re)||[]).length*(1+Math.min(term.length,8)/8);
+    });
+    return{...c,score:s};
+  });
+  return scored.filter(c=>c.score>0).sort((a,b)=>b.score-a.score).slice(0,topK);
+}
+
+// ── Chat ───────────────────────────────────────────────────
+let chatHistory=[];
+
+function useQ(t){document.getElementById('chatInput').value=t;resizeTA(document.getElementById('chatInput'));if(activeTab!=='chat')switchTab('chat');}
+
+function resizeTA(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+function taKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+function updateSendBtn(){
+  const hasNorms=norms.length>0;
+  const hasKey=!!apiKey;
+  document.getElementById('sendBtn').disabled=!hasNorms||!hasKey;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('chatInput');
+  const q=inp.value.trim();
+  if(!q||!apiKey||!norms.length)return;
+  inp.value='';resizeTA(inp);
+  hideEmpty();
+  addUserMsg(q);
+  const typing=addTyping();
+  document.getElementById('sendBtn').disabled=true;
+  setStatus('Suche in Normen...');
+
+  const chunks=search(q);
+  const ctx=chunks.length>0
+    ?chunks.map(c=>`[Quelle: ${c.normName} | Seite ${c.page}]\n${c.text}`).join('\n\n---\n\n')
+    :'Keine passenden Abschnitte in der aktuellen Normbibliothek gefunden.';
+
+  const userMsgForApi={role:'user',content:`Norm-Auszüge:\n\n${ctx}\n\n---\nFrage: ${q}`};
+  chatHistory.push(userMsgForApi);
+  if(chatHistory.length>10)chatHistory=chatHistory.slice(-10);
+
+  setStatus('KI antwortet...');
+  try{
+    const sysPrompt=`Du bist ein Experte für DIN VDE Normen und DGUV Vorschriften. Du hilfst einem DGUV Prüftechniker bei der täglichen Prüfarbeit.
+REGELN:
+- Beantworte NUR auf Basis der bereitgestellten Norm-Auszüge
+- Zitiere immer: (Normname, S. XX) bei jeder Aussage
+- Wenn keine Auszüge passen: empfehle die Norm hochzuladen
+- Sei präzise und direkt — keine langen Einleitungen
+- Nutze ✓ für erfüllte Anforderungen, ⚠ für Achtung-Hinweise
+- Antworte auf Deutsch`;
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:sysPrompt}]},
+        contents:[{role:'user',parts:[{text:`Norm-Auszüge:\n\n${ctx}\n\n---\nFrage: ${q}`}]}],
+        generationConfig:{maxOutputTokens:1000,temperature:0.2}
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message||'Gemini Fehler');
+    const ans=data.candidates?.[0]?.content?.parts?.[0]?.text||'Keine Antwort.';
+    typing.remove();
+    addAiMsg(ans,chunks);
+    chatHistory.push({role:'assistant',content:ans});
+    setStatus(chunks.length?`${chunks.length} Abschnitt(e) aus: ${[...new Set(chunks.map(c=>c.normName))].join(', ')}`:'Keine Quellen gefunden');
+  }catch(e){
+    typing.remove();
+    let msg='Verbindungsfehler. Prüfe Internetverbindung.';
+    if(e.message&&e.message.includes('api'))msg='API-Fehler: '+e.message.slice(0,60);
+    addAiMsg('⚠ '+msg,[]);
+    setStatus('Fehler');
+  }
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function hideEmpty(){const e=document.getElementById('chatEmpty');if(e)e.remove();}
+
+function addUserMsg(text){
+  const el=document.createElement('div');
+  el.className='msg-user';
+  el.textContent=text;
+  document.getElementById('chatMsgs').appendChild(el);
+  scrollChat();
+}
+
+function addTyping(){
+  const el=document.createElement('div');
+  el.className='typing-dot';
+  el.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  document.getElementById('chatMsgs').appendChild(el);
+  scrollChat();
+  return el;
+}
+
+function addAiMsg(text,sources){
+  const wrap=document.createElement('div');
+  wrap.className='msg-ai';
+  const bubble=document.createElement('div');
+  bubble.className='msg-ai-bubble';
+  bubble.innerHTML=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>').replace(/✓/g,'<span style="color:var(--green)">✓</span>').replace(/⚠/g,'<span style="color:var(--amber)">⚠</span>');
+  wrap.appendChild(bubble);
+  if(sources&&sources.length){
+    const srcWrap=document.createElement('div');
+    srcWrap.className='msg-sources';
+    const uniq=[...new Map(sources.map(s=>[s.normName+':'+s.page,s])).values()].slice(0,5);
+    uniq.forEach(s=>{
+      const chip=document.createElement('button');
+      chip.className='src-chip';
+      const shortName=s.normName.length>22?s.normName.slice(0,19)+'…':s.normName;
+      chip.innerHTML=`📄 ${esc(shortName)}, S.${s.page}`;
+      chip.onclick=()=>showSrc(s);
+      srcWrap.appendChild(chip);
+    });
+    wrap.appendChild(srcWrap);
+  }
+  document.getElementById('chatMsgs').appendChild(wrap);
+  scrollChat();
+}
+
+function scrollChat(){const c=document.getElementById('chatMsgs');c.scrollTop=c.scrollHeight;}
+
+function showSrc(s){
+  document.getElementById('srcModalTitle').textContent=`${s.normName} — Seite ${s.page}`;
+  document.getElementById('srcModalBody').innerHTML=`<p style="font-size:12px;color:var(--text-3);margin-bottom:8px">Verwendeter Textauszug:</p><div class="modal-source">${esc(s.text)}</div>`;
+  document.getElementById('srcModal').classList.add('show');
+}
+function closeSrcModal(e){if(e.target===document.getElementById('srcModal'))document.getElementById('srcModal').classList.remove('show');}
+
+// ── Settings ───────────────────────────────────────────────
+function saveApiKey(){
+  const val=document.getElementById('apiKeyInput').value.trim();
+  const btn=document.querySelector('.btn-save');
+  if(!val){
+    btn.textContent='⚠ Bitte Schlüssel eingeben!';
+    btn.style.background='var(--red)';
+    setTimeout(()=>{btn.textContent='Speichern';btn.style.background=''},2000);
+    return;
+  }
+  apiKey=val;
+  // localStorage — works on all browsers including file:// on iOS
+  const ok=lsSet('norm_apikey',val);
+  if(ok){
+    btn.textContent='✓ Gespeichert!';
+    btn.style.background='var(--green)';
+    setTimeout(()=>{btn.textContent='Speichern';btn.style.background=''},2500);
+  } else {
+    // Even if localStorage fails, key is in memory for this session
+    btn.textContent='✓ Aktiv (nur diese Sitzung)';
+    btn.style.background='var(--amber)';
+    setTimeout(()=>{btn.textContent='Speichern';btn.style.background=''},3000);
+  }
+  updateSendBtn();
+  updateStats();
+}
+
+async function clearAllData(){
+  if(!confirm('Alle Normen und Einstellungen löschen?'))return;
+  if(dbAvailable){try{await dbClear('norms');}catch(e){}}
+  lsRemove('norm_apikey');
+  lsRemove('norm_norms');
+  norms=[];apiKey='';chatHistory=[];
+  document.getElementById('apiKeyInput').value='';
+  document.getElementById('chatMsgs').innerHTML='<div class="chat-empty" id="chatEmpty"><svg viewBox="0 0 24 24" fill="none" width="44" height="44" stroke="var(--border-strong)" stroke-width="1.3"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Frage stellen</h3><p>Lade zuerst Normen in der Bibliothek hoch.</p></div>';
+  renderNorms();updateSendBtn();updateStats();
+  toast('Alle Daten gelöscht');setStatus('Bereit');
+}
+
+function updateStats(){
+  document.getElementById('statNorms').textContent=norms.length;
+  document.getElementById('statChunks').textContent=norms.reduce((a,n)=>a+n.chunks.length,0).toLocaleString('de-DE');
+  const k=document.getElementById('statKey');
+  k.innerHTML=apiKey?'<span class="badge green">Gespeichert</span>':'<span class="badge red">Fehlt</span>';
+  document.getElementById('statStorage').textContent=dbAvailable?'IndexedDB':'localStorage';
+}
+
+// ── Utilities ──────────────────────────────────────────────
+function setStatus(t){document.getElementById('hdrStatus').textContent=t;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let toastTimer;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
