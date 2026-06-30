@@ -229,7 +229,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
           <b style="color:var(--text)">Kostenlos & sicher</b> — Google Gemini Flash ist 100% kostenlos bis 1500 Anfragen/Tag. PDFs bleiben auf deinem Gerät.
         </div>
       </div>
-      <div class="version-tag">Version: Gemini-v2 · 2.5-flash</div>
+      <div class="version-tag">Version: Gemini-v3 · Synonyme + Kontext</div>
     </div>
   </div>
 
@@ -417,7 +417,52 @@ async function deleteNorm(id){
   setStatus(`${norms.length} Norm(en) in Bibliothek`);
 }
 
-const DE_STOP=new Set(['und','die','der','das','von','für','bei','mit','aus','nach','ist','sind','wird','werden','an','am','im','in','zu','auf','oder','auch','ein','eine','einer','einem','einen','nicht','so','wie','aber','wenn','dann','dass','wir','sie','es','er','ich','man','dem','den','des']);
+const DE_STOP=new Set(['und','die','der','das','von','für','bei','mit','aus','nach','ist','sind','wird','werden','an','am','im','in','zu','auf','oder','auch','ein','eine','einer','einem','einen','nicht','so','wie','aber','wenn','dann','dass','wir','sie','es','er','ich','man','dem','den','des','welche','welcher','welches','was','wo','wann','gibt','muss','müssen','soll','sollte']);
+
+// ── Synonym dictionary — elektro/DGUV Fachbegriffe ──────────
+// Jede Zeile ist eine Gruppe austauschbarer Begriffe.
+const SYN_GROUPS=[
+  ['schutzleiter','pe','erdleiter','erdung','schutzerde'],
+  ['fi-schalter','fi','rcd','fehlerstromschutzschalter','differenzstrom','residual'],
+  ['isolationswiderstand','isolationsmessung','isowiderstand'],
+  ['querschnitt','leiterquerschnitt','aderquerschnitt'],
+  ['wiederholungsprüfung','wiederholprüfung','periodische prüfung','regelmäßige prüfung'],
+  ['auslösestrom','ansprechstrom','nennfehlerstrom'],
+  ['kurzschluss','kurzschlussstrom','kurzschlußstrom'],
+  ['überstrom','überlast','überlastschutz'],
+  ['leitungsschutzschalter','ls-schalter','lsv','sicherungsautomat'],
+  ['berührungsspannung','berührspannung'],
+  ['schleifenwiderstand','schleifenimpedanz','fehlerschleife'],
+  ['anlage','elektrische anlage','installation'],
+  ['betriebsmittel','geräte','elektrogeräte','arbeitsmittel'],
+  ['prüffrist','prüfintervall','prüfungsabstand'],
+  ['sichtprüfung','besichtigung','visuelle prüfung'],
+  ['messung','messprüfung','elektrische prüfung'],
+  ['steckdose','schuko','steckvorrichtung'],
+  ['drehstrom','dreiphasig','3-phasig','3-phasen'],
+  ['transformator','trafo'],
+  ['potentialausgleich','potenzialausgleich','pa-schiene'],
+  ['mindestabstand','schutzabstand','sicherheitsabstand'],
+  ['leitungslänge','kabellänge'],
+  ['motor','elektromotor','antrieb'],
+  ['maschine','anlage','arbeitsmittel'],
+];
+// Build lookup: term -> all synonyms (including itself)
+const SYN_MAP={};
+SYN_GROUPS.forEach(group=>{
+  group.forEach(term=>{SYN_MAP[term]=group;});
+});
+
+function expandTerms(rawTerms){
+  // For each raw term, find its synonym group (exact match) plus itself
+  const expanded=new Set();
+  rawTerms.forEach(t=>{
+    expanded.add(t);
+    if(SYN_MAP[t])SYN_MAP[t].forEach(s=>expanded.add(s));
+    // also check multi-word synonyms containing this term as substring base
+  });
+  return [...expanded];
+}
 
 function search(query,topK=8){
   const active=norms.filter(n=>{
@@ -425,15 +470,34 @@ function search(query,topK=8){
     return btn?btn.classList.contains('on'):true;
   });
   const pool=active.length?active:norms;
-  const terms=query.toLowerCase().split(/[\s,;.?!]+/).filter(t=>t.length>2&&!DE_STOP.has(t));
+  const rawTerms=query.toLowerCase().split(/[\s,;.?!]+/).filter(t=>t.length>2&&!DE_STOP.has(t));
+  // also detect known multi-word synonym phrases directly in the query string
+  const qLower=query.toLowerCase();
+  const phraseHits=[];
+  SYN_GROUPS.forEach(group=>{
+    group.forEach(phrase=>{
+      if(phrase.includes(' ')&&qLower.includes(phrase))phraseHits.push(phrase);
+    });
+  });
+  let terms=[...rawTerms,...phraseHits];
   if(!terms.length)return[];
+  terms=expandTerms(terms);
+
   const scored=pool.flatMap(n=>n.chunks.map(c=>({...c,normName:n.name}))).map(c=>{
     const t=c.text.toLowerCase();
     let s=0;
+    let distinctHits=0;
     terms.forEach(term=>{
       const re=new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g');
-      s+=(t.match(re)||[]).length*(1+Math.min(term.length,8)/8);
+      const count=(t.match(re)||[]).length;
+      if(count>0){
+        distinctHits++;
+        s+=count*(1+Math.min(term.length,10)/10);
+      }
     });
+    // Bonus: chunks covering multiple distinct query concepts rank much higher
+    // than chunks repeating one term many times
+    s+=distinctHits*distinctHits*2;
     return{...c,score:s};
   });
   return scored.filter(c=>c.score>0).sort((a,b)=>b.score-a.score).slice(0,topK);
@@ -463,7 +527,13 @@ async function sendMsg(){
   document.getElementById('sendBtn').disabled=true;
   setStatus('Suche in Normen...');
 
-  const chunks=search(q);
+  // Follow-up detection: short questions ("und bei 32A?", "was wenn nicht?")
+  // get the previous user question added to the search query for better retrieval.
+  const meaningfulWords=q.toLowerCase().split(/\s+/).filter(w=>w.length>2&&!DE_STOP.has(w));
+  const lastUserQ=[...chatHistory].reverse().find(m=>m.role==='user');
+  const searchQuery=(meaningfulWords.length<=2&&lastUserQ)?(lastUserQ.text+' '+q):q;
+
+  const chunks=search(searchQuery);
   const ctx=chunks.length>0
     ?chunks.map(c=>`[Quelle: ${c.normName} | Seite ${c.page}]\n${c.text}`).join('\n\n---\n\n')
     :'Keine passenden Abschnitte in der aktuellen Normbibliothek gefunden.';
@@ -475,15 +545,24 @@ REGELN:
 - Beantworte NUR auf Basis der bereitgestellten Norm-Auszüge
 - Zitiere immer: (Normname, S. XX) bei jeder Aussage
 - Wenn keine Auszüge passen: empfehle die Norm hochzuladen
+- Beachte den bisherigen Gesprächsverlauf — wenn die Frage sich auf ein vorheriges Thema bezieht (z.B. "und bei 32A?"), beziehe dich darauf
 - Sei präzise und direkt — keine langen Einleitungen
 - Nutze ✓ für erfüllte Anforderungen, ⚠ für Achtung-Hinweise
 - Antworte auf Deutsch`;
+
+    // Build conversation history for Gemini (correct roles: user / model)
+    const historyContents=chatHistory.slice(-6).map(m=>({
+      role:m.role==='assistant'?'model':'user',
+      parts:[{text:m.text}]
+    }));
+    const currentMsg={role:'user',parts:[{text:`Norm-Auszüge:\n\n${ctx}\n\n---\nFrage: ${q}`}]};
+
     const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         systemInstruction:{parts:[{text:sysPrompt}]},
-        contents:[{role:'user',parts:[{text:`Norm-Auszüge:\n\n${ctx}\n\n---\nFrage: ${q}`}]}],
+        contents:[...historyContents,currentMsg],
         generationConfig:{maxOutputTokens:1000,temperature:0.2}
       })
     });
@@ -492,7 +571,9 @@ REGELN:
     const ans=data.candidates?.[0]?.content?.parts?.[0]?.text||'Keine Antwort.';
     typing.remove();
     addAiMsg(ans,chunks);
-    chatHistory.push({role:'assistant',content:ans});
+    chatHistory.push({role:'user',text:q});
+    chatHistory.push({role:'assistant',text:ans});
+    if(chatHistory.length>16)chatHistory=chatHistory.slice(-16);
     setStatus(chunks.length?`${chunks.length} Abschnitt(e) aus: ${[...new Set(chunks.map(c=>c.normName))].join(', ')}`:'Keine Quellen gefunden');
   }catch(e){
     typing.remove();
