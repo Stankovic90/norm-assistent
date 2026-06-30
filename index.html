@@ -229,7 +229,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
           <b style="color:var(--text)">Kostenlos & sicher</b> — Google Gemini Flash ist 100% kostenlos bis 1500 Anfragen/Tag. PDFs bleiben auf deinem Gerät.
         </div>
       </div>
-      <div class="version-tag">Version: Gemini-v3 · Synonyme + Kontext</div>
+      <div class="version-tag">Version: Gemini-v4 · Selbstprüfung</div>
     </div>
   </div>
 
@@ -568,11 +568,59 @@ REGELN:
     });
     const data=await res.json();
     if(data.error)throw new Error((data.error.message||'Gemini Fehler')+' (Code: '+(data.error.code||res.status)+')');
-    const ans=data.candidates?.[0]?.content?.parts?.[0]?.text||'Keine Antwort.';
+    const draftAns=data.candidates?.[0]?.content?.parts?.[0]?.text||'Keine Antwort.';
+
+    // ── Self-review pass: ask Gemini to check its own draft answer ──
+    setStatus('Antwort wird geprüft...');
+    let finalAns=draftAns;
+    let wasReviewed=false;
+    try{
+      const reviewPrompt=`Hier ist ein Antwort-Entwurf, den du gerade auf Basis der Norm-Auszüge gegeben hast:
+
+--- ENTWURF ---
+${draftAns}
+--- ENDE ENTWURF ---
+
+Hier sind die Norm-Auszüge, auf denen der Entwurf basieren sollte:
+
+--- QUELLEN ---
+${ctx}
+--- ENDE QUELLEN ---
+
+Ursprüngliche Frage: ${q}
+
+Prüfe den Entwurf kritisch:
+1. Steht jede Aussage tatsächlich so in den Quellen? Keine erfundenen Fakten?
+2. Sind die Seiten- und Normangaben korrekt?
+3. Fehlt etwas Wichtiges aus den Quellen, das relevant für die Frage ist?
+4. Gibt es Widersprüche oder Unklarheiten?
+
+Gib NUR die korrigierte, finale Antwort aus (gleiche Sprache, gleicher Stil wie der Entwurf). Wenn der Entwurf schon korrekt war, gib ihn unverändert zurück. KEINE Erklärung des Prüfprozesses, KEINE Meta-Kommentare wie "Ich habe geprüft..." — nur die finale Antwort selbst, direkt einsatzbereit für den Prüftechniker.`;
+
+      const reviewRes=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{role:'user',parts:[{text:reviewPrompt}]}],
+          generationConfig:{maxOutputTokens:1000,temperature:0.1}
+        })
+      });
+      const reviewData=await reviewRes.json();
+      if(!reviewData.error){
+        const reviewed=reviewData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(reviewed&&reviewed.trim().length>10){
+          finalAns=reviewed.trim();
+          wasReviewed=true;
+        }
+      }
+    }catch(reviewErr){
+      // If review pass fails, silently fall back to the draft answer
+    }
+
     typing.remove();
-    addAiMsg(ans,chunks);
+    addAiMsg(finalAns,chunks,wasReviewed);
     chatHistory.push({role:'user',text:q});
-    chatHistory.push({role:'assistant',text:ans});
+    chatHistory.push({role:'assistant',text:finalAns});
     if(chatHistory.length>16)chatHistory=chatHistory.slice(-16);
     setStatus(chunks.length?`${chunks.length} Abschnitt(e) aus: ${[...new Set(chunks.map(c=>c.normName))].join(', ')}`:'Keine Quellen gefunden');
   }catch(e){
@@ -603,13 +651,19 @@ function addTyping(){
   return el;
 }
 
-function addAiMsg(text,sources){
+function addAiMsg(text,sources,wasReviewed){
   const wrap=document.createElement('div');
   wrap.className='msg-ai';
   const bubble=document.createElement('div');
   bubble.className='msg-ai-bubble';
   bubble.innerHTML=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>').replace(/✓/g,'<span style="color:var(--green)">✓</span>').replace(/⚠/g,'<span style="color:var(--amber)">⚠</span>');
   wrap.appendChild(bubble);
+  if(wasReviewed){
+    const badge=document.createElement('div');
+    badge.style.cssText='font-size:10px;color:var(--text-3);margin-top:4px;display:flex;align-items:center;gap:3px';
+    badge.innerHTML='<span style="color:var(--green)">✓</span> Selbst geprüft';
+    wrap.appendChild(badge);
+  }
   if(sources&&sources.length){
     const srcWrap=document.createElement('div');
     srcWrap.className='msg-sources';
