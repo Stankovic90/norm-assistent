@@ -35,24 +35,24 @@
 }
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--surface-2);color:var(--text)}
 #app{display:flex;flex-direction:column;height:100%;max-width:540px;margin:0 auto;background:var(--surface);position:relative}
-
+ 
 /* Header */
 .hdr{background:var(--blue);color:#fff;padding:12px 16px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top))}
 .hdr-icon{width:34px;height:34px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .hdr-title{font-size:17px;font-weight:600;letter-spacing:-0.3px}
 .hdr-sub{font-size:11px;opacity:0.8;margin-top:1px}
 .hdr-status{margin-left:auto;font-size:11px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
-
+ 
 /* Tab bar */
 .tabs{display:flex;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;border:none;background:none;color:var(--text-3);font-size:10px;font-weight:500;gap:4px;transition:color 0.15s;min-height:56px}
 .tab.active{color:var(--blue)}
 .tab svg{width:22px;height:22px;stroke-width:1.8}
-
+ 
 /* Screens */
 .screen{flex:1;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;-webkit-overflow-scrolling:touch}
 .screen.active{display:flex}
-
+ 
 /* Bibliothek */
 .upload-btn{margin:16px;border:2px dashed var(--border-strong);border-radius:var(--radius);padding:24px 16px;text-align:center;cursor:pointer;background:var(--surface-2);transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:8px}
 .upload-btn:active{background:var(--blue-light);border-color:var(--blue)}
@@ -81,7 +81,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;color:var(--text-3);text-align:center}
 .empty-state svg{width:48px;height:48px;stroke:var(--border-strong);stroke-width:1.2}
 .empty-state p{font-size:14px;line-height:1.6}
-
+ 
 /* Chat */
 .chat-msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
 .msg-user{align-self:flex-end;max-width:82%;background:var(--blue);color:#fff;border-radius:18px 18px 4px 18px;padding:11px 15px;font-size:14px;line-height:1.5}
@@ -108,7 +108,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .suggestion{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--text-2);line-height:1.4;font-family:inherit}
 .suggestion:active{background:var(--blue-light);border-color:var(--blue-mid)}
 .suggestion b{display:block;font-size:10px;color:var(--text-3);font-weight:500;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.3px}
-
+ 
 /* Einstellungen */
 .settings-wrap{padding:16px;display:flex;flex-direction:column;gap:16px}
 .settings-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
@@ -131,11 +131,11 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .badge.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .badge.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
 .badge.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-
+ 
 /* Toast */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:999;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
-
+ 
 /* Detail modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;padding-bottom:env(safe-area-inset-bottom)}
 .modal-overlay.show{display:flex}
@@ -158,7 +158,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     </div>
     <div class="hdr-status" id="hdrStatus">Starte...</div>
   </div>
-
+ 
   <!-- Bibliothek Screen -->
   <div class="screen active" id="screen-bib">
     <div class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
@@ -178,7 +178,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
       <p>Lade deine DIN VDE Normen hoch.<br>Die Texte werden dauerhaft gespeichert.</p>
     </div>
   </div>
-
+ 
   <!-- Chat Screen -->
   <div class="screen" id="screen-chat">
     <div class="chat-msgs" id="chatMsgs">
@@ -201,7 +201,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
       </button>
     </div>
   </div>
-
+ 
   <!-- Einstellungen Screen -->
   <div class="screen" id="screen-set">
     <div class="settings-wrap">
@@ -215,7 +215,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
         <div class="field-hint">Kostenlos anmelden: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>100% kostenlos · bis zu 1500 Anfragen/Tag · kein Kreditkarte nötig. Der Schlüssel bleibt nur auf deinem Gerät.</div>
         <button class="btn-save" onclick="saveApiKey()" style="margin-top:12px">Speichern</button>
       </div>
-
+ 
       <div class="settings-card">
         <h3>
           <svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 2v7h7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -227,7 +227,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
         <div class="info-row"><span>Speicher</span><span id="statStorage">—</span></div>
         <button class="btn-danger" onclick="clearAllData()" style="margin-top:12px">Alle Daten löschen</button>
       </div>
-
+ 
       <div class="settings-card">
         <h3>
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -242,7 +242,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
       </div>
     </div>
   </div>
-
+ 
   <!-- Tab Bar -->
   <div class="tabs">
     <button class="tab active" id="tab-bib" onclick="switchTab('bib')">
@@ -259,7 +259,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     </button>
   </div>
 </div>
-
+ 
 <!-- Source Detail Modal -->
 <div class="modal-overlay" id="srcModal" onclick="closeSrcModal(event)">
   <div class="modal-sheet">
@@ -269,9 +269,9 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     <button class="modal-close" onclick="document.getElementById('srcModal').classList.remove('show')">Schließen</button>
   </div>
 </div>
-
+ 
 <div class="toast" id="toast"></div>
-
+ 
 <script>
 // ── IndexedDB ──────────────────────────────────────────────
 const DB_NAME='normassistent',DB_VER=1;
@@ -293,27 +293,27 @@ function dbGetAll(store){return new Promise((res,rej)=>{const t=db.transaction(s
 function dbPut(store,val){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).put(val);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
 function dbDelete(store,key){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).delete(key);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
 function dbClear(store){return new Promise((res,rej)=>{const t=db.transaction(store,'readwrite').objectStore(store).clear();t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
-
+ 
 // ── State ──────────────────────────────────────────────────
 let norms=[];
 let apiKey='';
 let activeTab='bib';
 let isProcessing=false;
-
+ 
 // ── Init ───────────────────────────────────────────────────
 // API key: always localStorage (works everywhere, even file://)
 // Norm chunks: IndexedDB (large data), with localStorage fallback
 let dbAvailable=false;
-
+ 
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
 function lsRemove(k){try{localStorage.removeItem(k)}catch(e){}}
-
+ 
 (async()=>{
   // Load API key from localStorage first (always works)
   const storedKey=lsGet('norm_apikey');
   if(storedKey){apiKey=storedKey;document.getElementById('apiKeyInput').value=storedKey;}
-
+ 
   // Try IndexedDB for norms
   try{
     await openDB();
@@ -327,14 +327,14 @@ function lsRemove(k){try{localStorage.removeItem(k)}catch(e){}}
       if(raw)norms=JSON.parse(raw);
     }catch(e2){}
   }
-
+ 
   if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   renderNorms();
   updateSendBtn();
   updateStats();
   setStatus(norms.length?`${norms.length} Norm(en) geladen`:'Bereit');
 })();
-
+ 
 async function saveNorm(norm){
   if(dbAvailable){
     await dbPut('norms',norm);
@@ -350,7 +350,7 @@ async function removeNorm(id){
     lsSet('norm_norms',JSON.stringify(norms));
   }
 }
-
+ 
 // ── Tab navigation ─────────────────────────────────────────
 function switchTab(t){
   activeTab=t;
@@ -360,7 +360,7 @@ function switchTab(t){
   });
   if(t==='set')updateStats();
 }
-
+ 
 // ── Upload & PDF processing ────────────────────────────────
 document.getElementById('fileInput').addEventListener('change',async e=>{
   if(isProcessing)return;
@@ -413,7 +413,7 @@ document.getElementById('fileInput').addEventListener('change',async e=>{
   updateStats();
   setStatus(`${norms.length} Norm(en) in Bibliothek`);
 });
-
+ 
 // ── Render norms ───────────────────────────────────────────
 function renderNorms(){
   const el=document.getElementById('normList');
@@ -434,12 +434,12 @@ function renderNorms(){
       </button>
     </div>`).join('');
 }
-
+ 
 function toggleNorm(id){
   const btn=document.getElementById('tog_'+id);
   btn.classList.toggle('on');btn.classList.toggle('off');
 }
-
+ 
 async function deleteNorm(id){
   if(!confirm('Norm aus der Bibliothek entfernen?'))return;
   norms=norms.filter(n=>n.id!==id);
@@ -447,10 +447,10 @@ async function deleteNorm(id){
   renderNorms();updateSendBtn();updateStats();
   setStatus(`${norms.length} Norm(en) in Bibliothek`);
 }
-
+ 
 // ── Search ─────────────────────────────────────────────────
 const DE_STOP=new Set(['und','die','der','das','von','für','bei','mit','aus','nach','ist','sind','wird','werden','an','am','im','in','zu','auf','oder','auch','ein','eine','einer','einem','einen','nicht','so','wie','aber','wenn','dann','dass','wir','sie','es','er','ich','man','dem','den','des']);
-
+ 
 function search(query,topK=8){
   const active=norms.filter(n=>{
     const btn=document.getElementById('tog_'+n.id);
@@ -470,21 +470,21 @@ function search(query,topK=8){
   });
   return scored.filter(c=>c.score>0).sort((a,b)=>b.score-a.score).slice(0,topK);
 }
-
+ 
 // ── Chat ───────────────────────────────────────────────────
 let chatHistory=[];
-
+ 
 function useQ(t){document.getElementById('chatInput').value=t;resizeTA(document.getElementById('chatInput'));if(activeTab!=='chat')switchTab('chat');}
-
+ 
 function resizeTA(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
 function taKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
-
+ 
 function updateSendBtn(){
   const hasNorms=norms.length>0;
   const hasKey=!!apiKey;
   document.getElementById('sendBtn').disabled=!hasNorms||!hasKey;
 }
-
+ 
 async function sendMsg(){
   const inp=document.getElementById('chatInput');
   const q=inp.value.trim();
@@ -495,16 +495,16 @@ async function sendMsg(){
   const typing=addTyping();
   document.getElementById('sendBtn').disabled=true;
   setStatus('Suche in Normen...');
-
+ 
   const chunks=search(q);
   const ctx=chunks.length>0
     ?chunks.map(c=>`[Quelle: ${c.normName} | Seite ${c.page}]\n${c.text}`).join('\n\n---\n\n')
     :'Keine passenden Abschnitte in der aktuellen Normbibliothek gefunden.';
-
+ 
   const userMsgForApi={role:'user',content:`Norm-Auszüge:\n\n${ctx}\n\n---\nFrage: ${q}`};
   chatHistory.push(userMsgForApi);
   if(chatHistory.length>10)chatHistory=chatHistory.slice(-10);
-
+ 
   setStatus('KI antwortet...');
   try{
     const sysPrompt=`Du bist ein Experte für DIN VDE Normen und DGUV Vorschriften. Du hilfst einem DGUV Prüftechniker bei der täglichen Prüfarbeit.
@@ -515,7 +515,7 @@ REGELN:
 - Sei präzise und direkt — keine langen Einleitungen
 - Nutze ✓ für erfüllte Anforderungen, ⚠ für Achtung-Hinweise
 - Antworte auf Deutsch`;
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -533,16 +533,15 @@ REGELN:
     setStatus(chunks.length?`${chunks.length} Abschnitt(e) aus: ${[...new Set(chunks.map(c=>c.normName))].join(', ')}`:'Keine Quellen gefunden');
   }catch(e){
     typing.remove();
-    let msg='Verbindungsfehler. Prüfe Internetverbindung.';
-    if(e.message&&e.message.includes('api'))msg='API-Fehler: '+e.message.slice(0,60);
-    addAiMsg('⚠ '+msg,[]);
-    setStatus('Fehler');
+    const msg=e.message||'Unbekannter Fehler';
+    addAiMsg('⚠ Fehler: '+msg,[]);
+    setStatus('Fehler: '+msg.slice(0,40));
   }
   document.getElementById('sendBtn').disabled=false;
 }
-
+ 
 function hideEmpty(){const e=document.getElementById('chatEmpty');if(e)e.remove();}
-
+ 
 function addUserMsg(text){
   const el=document.createElement('div');
   el.className='msg-user';
@@ -550,7 +549,7 @@ function addUserMsg(text){
   document.getElementById('chatMsgs').appendChild(el);
   scrollChat();
 }
-
+ 
 function addTyping(){
   const el=document.createElement('div');
   el.className='typing-dot';
@@ -559,7 +558,7 @@ function addTyping(){
   scrollChat();
   return el;
 }
-
+ 
 function addAiMsg(text,sources){
   const wrap=document.createElement('div');
   wrap.className='msg-ai';
@@ -584,16 +583,16 @@ function addAiMsg(text,sources){
   document.getElementById('chatMsgs').appendChild(wrap);
   scrollChat();
 }
-
+ 
 function scrollChat(){const c=document.getElementById('chatMsgs');c.scrollTop=c.scrollHeight;}
-
+ 
 function showSrc(s){
   document.getElementById('srcModalTitle').textContent=`${s.normName} — Seite ${s.page}`;
   document.getElementById('srcModalBody').innerHTML=`<p style="font-size:12px;color:var(--text-3);margin-bottom:8px">Verwendeter Textauszug:</p><div class="modal-source">${esc(s.text)}</div>`;
   document.getElementById('srcModal').classList.add('show');
 }
 function closeSrcModal(e){if(e.target===document.getElementById('srcModal'))document.getElementById('srcModal').classList.remove('show');}
-
+ 
 // ── Settings ───────────────────────────────────────────────
 function saveApiKey(){
   const val=document.getElementById('apiKeyInput').value.trim();
@@ -620,7 +619,7 @@ function saveApiKey(){
   updateSendBtn();
   updateStats();
 }
-
+ 
 async function clearAllData(){
   if(!confirm('Alle Normen und Einstellungen löschen?'))return;
   if(dbAvailable){try{await dbClear('norms');}catch(e){}}
@@ -632,7 +631,7 @@ async function clearAllData(){
   renderNorms();updateSendBtn();updateStats();
   toast('Alle Daten gelöscht');setStatus('Bereit');
 }
-
+ 
 function updateStats(){
   document.getElementById('statNorms').textContent=norms.length;
   document.getElementById('statChunks').textContent=norms.reduce((a,n)=>a+n.chunks.length,0).toLocaleString('de-DE');
@@ -640,7 +639,7 @@ function updateStats(){
   k.innerHTML=apiKey?'<span class="badge green">Gespeichert</span>':'<span class="badge red">Fehlt</span>';
   document.getElementById('statStorage').textContent=dbAvailable?'IndexedDB':'localStorage';
 }
-
+ 
 // ── Utilities ──────────────────────────────────────────────
 function setStatus(t){document.getElementById('hdrStatus').textContent=t;}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -649,3 +648,4 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 </script>
 </body>
 </html>
+ 
